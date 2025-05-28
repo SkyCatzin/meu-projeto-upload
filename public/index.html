@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Uploader de Arquivos</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2em;
+      background-color: #f5f5f5;
+    }
+
+    h1, h2 {
+      color: #333;
+    }
+
+    form {
+      background: white;
+      padding: 1em;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 400px;
+    }
+
+    input[type="file"] {
+      display: block;
+      margin-bottom: 1em;
+    }
+
+    button {
+      padding: 0.5em 1em;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #status {
+      margin-top: 1em;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: white;
+      padding: 0.5em;
+      margin: 0.3em 0;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.05);
+    }
+
+    a {
+      text-decoration: none;
+      color: #007bff;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>Enviar Arquivo</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="arquivo" required />
+    <button type="submit">Enviar</button>
+  </form>
+  <p id="status"></p>
+
+  <h2>Arquivos disponíveis</h2>
+  <ul id="listaArquivos"></ul>
+
+  <script>
+    const form = document.getElementById("uploadForm");
+    const statusText = document.getElementById("status");
+    const lista = document.getElementById("listaArquivos");
+
+    // Função para carregar a lista de arquivos
+    async function carregarArquivos() {
+      try {
+        const res = await fetch("/arquivos");
+        if (!res.ok) throw new Error("Erro ao buscar arquivos.");
+        const arquivos = await res.json();
+        lista.innerHTML = "";
+
+        arquivos.forEach(nome => {
+          const li = document.createElement("li");
+          const link = document.createElement("a");
+          link.href = `/uploads/${nome}`;
+          link.textContent = nome;
+          link.download = nome;
+          li.appendChild(link);
+          lista.appendChild(li);
+        });
+      } catch (err) {
+        lista.innerHTML = "<li>Erro ao carregar arquivos.</li>";
+        console.error(err);
+      }
+    }
+
+    // Evento de envio do formulário
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          statusText.textContent = "Arquivo enviado com sucesso!";
+          form.reset();
+          carregarArquivos(); // Atualiza a lista
+        } else {
+          statusText.textContent = "Erro ao enviar o arquivo.";
+        }
+      } catch (err) {
+        statusText.textContent = "Erro na comunicação com o servidor.";
+        console.error(err);
+      }
+    });
+
+    // Carregar arquivos ao iniciar
+    carregarArquivos();
+  </script>
+</body>
+</html>
